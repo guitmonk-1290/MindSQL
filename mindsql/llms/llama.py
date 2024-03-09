@@ -21,8 +21,14 @@ class LlamaCpp(ILlm):
         if 'model_path' not in config:
             raise ValueError(LLAMA_VALUE_ERROR)
         path = config['model_path']
+        llama_params = config.get('llama_params', {})
 
-        self.model = Llama(model_path=path)
+        self.model = Llama(
+            model_path=path,
+            n_ctx = llama_params['n_ctx'],
+            n_gpu_layers = llama_params['n_gpu_layers'],
+            n_batch = llama_params['n_batch']
+        )
 
     def system_message(self, message: str) -> any:
         """
