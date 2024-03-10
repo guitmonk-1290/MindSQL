@@ -1,4 +1,4 @@
-from llama_cpp import Llama
+from llama_cpp import Llama, LLAMA_SPLIT_LAYER, LLAMA_DEFAULT_SEED, LLAMA_ROPE_SCALING_UNSPECIFIED
 
 from .._utils.constants import LLAMA_VALUE_ERROR, LLAMA_PROMPT_EXCEPTION
 from .illm import ILlm
@@ -21,14 +21,61 @@ class LlamaCpp(ILlm):
         if 'model_path' not in config:
             raise ValueError(LLAMA_VALUE_ERROR)
         path = config['model_path']
-        llama_params = config.get('llama_params', {})
+        
+        if 'llama_params' in config:
+            llama_params = config.get('llama_params', {})
+            default_params = {
+                'n_gpu_layers': 0,
+                'split_mode': LLAMA_SPLIT_LAYER,
+                'main_gpu': 0,
+                'tensor_split': None,
+                'vocab_only': False,
+                'use_mmap': True,
+                'use_mlock': False,
+                'kv_overrides': None,
+                # Context Params
+                'seed': LLAMA_DEFAULT_SEED,
+                'n_ctx': 512,
+                'n_batch': 512,
+                'n_threads': None,
+                'n_threads_batch': None,
+                'rope_scaling_type': LLAMA_ROPE_SCALING_UNSPECIFIED,
+                'rope_freq_base': 0.0,
+                'rope_freq_scale': 0.0,
+                'yarn_ext_factor': -1.0,
+                'yarn_attn_factor': 1.0,
+                'yarn_beta_fast': 32.0,
+                'yarn_beta_slow': 1.0,
+                'yarn_orig_ctx': 0,
+                'mul_mat_q': True,
+                'logits_all': False,
+                'embedding': False,
+                'offload_kqv': True,
+                # Sampling Params
+                'last_n_tokens_size': 64,
+                # LoRA Params
+                'lora_base': None,
+                'lora_scale': 1.0,
+                'lora_path': None,
+                # Backend Params
+                'numa': False,
+                # Chat Format Params
+                'chat_format': None,
+                'chat_handler': None,
+                # Speculative Decoding
+                'draft_model': None,
+                # Tokenizer Override
+                'tokenizer': None,
+                # Misc
+                'verbose': True,
+            }
 
-        self.model = Llama(
-            model_path=path,
-            n_ctx = llama_params['n_ctx'],
-            n_gpu_layers = llama_params['n_gpu_layers'],
-            n_batch = llama_params['n_batch']
-        )
+            # Combine parameters using custom values or defaults
+            params = {key: llama_params.get(key, default_params[key]) for key in default_params}
+
+            self.model = Llama(model_path=path, **params)
+        else:
+            self.model = Llama(model_path=path)
 
     def system_message(self, message: str) -> any:
         """
